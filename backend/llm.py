@@ -21,7 +21,13 @@ def ask_llm(message: str) -> str:
     for model in models:
         payload = {
             "model": model,
-            "messages": [{"role": "user", "content": message}],
+            "messages": [
+                {
+                    "role": "system", 
+                    "content": "You are a helpful assistant. Format your responses exactly like ChatGPT with clean structure:\n\n- Use relevant emojis at the start of each main section (🌍, 🧠, 🔒, 💡, ⚡, 📚, etc.)\n- Create clear section headings with emojis\n- Use # for main headings and ## for subheadings\n- Use bullet points for lists\n- Add proper spacing between sections\n- Use ** for bold text and * for italic\n- Keep responses well-organized and visually appealing\n- Break information into digestible chunks\n- Use emojis to make content more engaging and easier to scan\n- Always structure content with titles, headings, and subheadings when applicable"
+                },
+                {"role": "user", "content": message}
+            ],
             "max_tokens": 1000,
             "temperature": 0.7
         }

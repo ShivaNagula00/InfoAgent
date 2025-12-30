@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { sendMessage } from "./api";
+import { formatResponse, formatTextContent } from "./utils/formatResponse";
 import "./index.css";
 
 export default function Chat() {
@@ -8,6 +9,59 @@ export default function Chat() {
   const [loading, setLoading] = useState(false);
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
+
+  // Component to render formatted bot responses
+  const FormattedResponse = ({ text }) => {
+    const formattedParts = formatResponse(text);
+    
+    return (
+      <div className="formatted-response">
+        {formattedParts.map((part) => {
+          switch (part.type) {
+            case 'heading':
+              const HeadingTag = `h${Math.min((part.level || 1) + 1, 6)}`;
+              return (
+                <div key={part.key} className={`response-heading level-${(part.level || 1) + 1}`}>
+                  {React.createElement(HeadingTag, { style: { margin: 0 } }, part.content)}
+                </div>
+              );
+            case 'list-item':
+              return (
+                <div key={part.key} className="response-list-item">
+                  <span className="list-bullet">•</span>
+                  <span dangerouslySetInnerHTML={{ __html: formatTextContent(part.content.replace(/^[-*•]\s|^\d+\.\s/, '')) }} />
+                </div>
+              );
+            case 'code':
+              const codeContent = part.content.replace(/```/g, '');
+              return (
+                <div key={part.key} className="response-code-container">
+                  <div className="code-header">
+                    <span className="code-language">Code</span>
+                    <button 
+                      className="copy-button"
+                      onClick={() => navigator.clipboard.writeText(codeContent)}
+                      title="Copy code"
+                    >
+                      📋
+                    </button>
+                  </div>
+                  <pre className="response-code">
+                    <code>{codeContent}</code>
+                  </pre>
+                </div>
+              );
+            case 'paragraph':
+            default:
+              return (
+                <p key={part.key} className="response-paragraph" 
+                   dangerouslySetInnerHTML={{ __html: formatTextContent(part.content) }} />
+              );
+          }
+        })}
+      </div>
+    );
+  };
 
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -103,7 +157,13 @@ export default function Chat() {
                 <div className={`message-avatar ${message.role === "user" ? "user-avatar" : "assistant-avatar"}`}>
                   <span className="avatar-icon">{message.role === "user" ? "👤" : "🤖"}</span>
                 </div>
-                <div className="message-content">{message.text}</div>
+                <div className="message-content">
+                  {message.role === "assistant" ? (
+                    <FormattedResponse text={message.text} />
+                  ) : (
+                    message.text
+                  )}
+                </div>
               </div>
             ))}
             
